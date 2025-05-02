@@ -64,6 +64,9 @@ def auto_translate(text):
         # 補丁 2：偵測中文字比例偏高 → 強制為中文
         if is_mostly_chinese(text):
             lang = 'zh'
+        # 補丁 3：若文字中含有數字 + 「點」，很可能是中文時間表達
+        if re.match(r"^\d{1,2}點$", text.strip()):
+            lang = 'zh'
 
         # 標準化語言碼
         if 'zh' in lang:
