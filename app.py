@@ -98,8 +98,7 @@ def handle_message(event):
 
 if __name__ == "__main__":
     import os
+    port = int(os.environ.get("PORT", 5000))  # 讀取 Render 自動給的 PORT 或預設 5000
+    app.run(host='0.0.0.0', port=port)
 
-    if __name__ == "__main__":
-        port = int(os.environ.get("PORT", 5000))  # Render 會自動指定 PORT 環境變數
-        app.run(host="0.0.0.0", port=port)
 
