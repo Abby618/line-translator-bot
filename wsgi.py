@@ -1,4 +1,4 @@
-from app import app  # 若你 Flask 實例定義在 app.py 裡
+from main import app
 
 if __name__ == "__main__":
     app.run()
