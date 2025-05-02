@@ -39,34 +39,49 @@ def translate(text, target_lang, source_lang="auto"):
         return "⚠️ 翻譯失敗，請稍後再試"
 
 
+# 判斷是否為「主要為中文字」的句子
+def is_mostly_chinese(text):
+    chinese_chars = re.findall(r'[\u4e00-\u9fff]', text)
+    return len(chinese_chars) / max(len(text), 1) > 0.5
 
-# 自動翻譯邏輯＋加上標籤
+# 自動翻譯邏輯
 def auto_translate(text):
     try:
-        lang = detect(re.sub(r"[，。！？、,.!?]", "", text))  # 🔍 用乾淨的文字偵測語言
-        print("語言偵測結果：", lang)
-        
-        # 強制關鍵字補丁
-        if any(word in text for word in ["吃", "什麼", "今天", "你"]):
+        # 用去除標點符號的文字來判斷語言
+        clean_text = re.sub(r"[，。！？、,.!?！：:]", "", text)
+        lang = detect(clean_text)
+        print("語言偵測結果（初步）：", lang)
+
+        # 補丁 1：關鍵字補救
+        if any(word in text for word in ["吃", "什麼", "今天", "你", "記得", "衣服", "收"]):
             lang = 'zh'
         elif any(word in text.lower() for word in ["apa", "makan", "suci", "kamu"]):
             lang = 'id'
 
+        # 補丁 2：偵測中文字比例偏高 → 強制為中文
+        if is_mostly_chinese(text):
+            lang = 'zh'
+
+        # 標準化語言碼
         if 'zh' in lang:
             lang = 'zh'
         elif lang == 'jw' or 'id' in lang:
             lang = 'id'
 
+        # 翻譯邏輯
         if lang == 'zh':
             eng = translate(text, 'en', 'zh')
             idn = translate(eng, 'id', 'en')
             return f"🧑‍🏫 原文（中文）：\n{text}\n\n🌐 印尼語翻譯：\n{idn}"
+
         elif lang == 'id':
             eng = translate(text, 'en', 'id')
             zh = translate(eng, 'zh', 'en')
             return f"🧑‍🏫 原文（印尼語）：\n{text}\n\n🌐 中文翻譯：\n{zh}"
+
         else:
             return f"⚠️ 暫不支援此語言（偵測為：{lang}）"
+
     except Exception as e:
         return f"⚠️ 翻譯錯誤：{str(e)}"
 
