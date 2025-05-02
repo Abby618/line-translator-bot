@@ -6,6 +6,9 @@ import requests
 from langdetect import detect
 from googletrans import Translator
 import re 
+import time
+
+is_cold_start = True
 
 app = Flask(__name__)
 
@@ -105,12 +108,30 @@ def home():
 # 處理文字訊息事件
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    global is_cold_start
     user_text = event.message.text
     reply_text = auto_translate(user_text)
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=reply_text)
-    )
+
+    # 如果是第一次啟動，先回「啟動中」訊息，然後再正常翻譯
+    if is_cold_start:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="⚡ 系統剛啟動，可能需要幾秒熱機，請稍候...")
+        )
+        is_cold_start = False
+        # 0.5秒後再送出真正翻譯訊息
+        time.sleep(0.5)
+        line_bot_api.push_message(
+            event.source.user_id,
+            TextSendMessage(text=reply_text)
+        )
+    else:
+        # 非第一次直接回應
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+
 
 if __name__ == "__main__":
     import os
