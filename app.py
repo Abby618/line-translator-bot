@@ -5,6 +5,7 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage
 import requests
 from langdetect import detect
 from googletrans import Translator
+import re 
 
 app = Flask(__name__)
 
@@ -42,16 +43,14 @@ def translate(text, target_lang, source_lang="auto"):
 # 自動翻譯邏輯＋加上標籤
 def auto_translate(text):
     try:
-        lang = detect(text)
+        lang = detect(re.sub(r"[，。！？、,.!?]", "", text))  # 🔍 用乾淨的文字偵測語言
         print("語言偵測結果：", lang)
         
-        # 強制關鍵字補丁：解決 langdetect 誤判
+        # 強制關鍵字補丁
         if any(word in text for word in ["吃", "什麼", "今天", "你"]):
             lang = 'zh'
         elif any(word in text.lower() for word in ["apa", "makan", "suci", "kamu"]):
             lang = 'id'
-
-        print("語言偵測結果：", lang)
 
         if 'zh' in lang:
             lang = 'zh'
@@ -70,8 +69,6 @@ def auto_translate(text):
             return f"⚠️ 暫不支援此語言（偵測為：{lang}）"
     except Exception as e:
         return f"⚠️ 翻譯錯誤：{str(e)}"
-
-
 
 # LINE callback入口
 @app.route("/callback", methods=['POST'])
