@@ -54,6 +54,10 @@ def auto_translate(text):
         clean_text = re.sub(r"[，。！？、,.!?！：:]", "", text)
         lang = detect(clean_text)
         print("語言偵測結果（初步）：", lang)
+        
+        # 補丁 0：特定詞直接視為印尼語
+        if text.strip().lower() == "halo":
+            lang = "id"
 
         # 補丁 1：關鍵字補救
         if any(word in text for word in ["吃", "什麼", "今天", "你", "記得", "衣服", "收"]):
