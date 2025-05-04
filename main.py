@@ -126,10 +126,12 @@ def handle_message(event):
     reply_text = auto_translate(user_text)
 
     # 如果是第一次啟動，先回「啟動中」訊息，然後再正常翻譯
-    if is_cold_start:
+    if is_cold_start: 
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="⚡ 系統剛啟動，可能需要幾秒熱機，請稍候...")
+            TextSendMessage(
+                text="⚡ 系統剛啟動，可能需要幾秒熱機，請稍候...\n⚡ Sistem baru saja dimulai, mungkin perlu beberapa detik untuk memanas, harap tunggu ..."
+            )
         )
         is_cold_start = False
         # 0.5秒後再送出真正翻譯訊息
@@ -138,6 +140,7 @@ def handle_message(event):
             event.source.user_id,
             TextSendMessage(text=reply_text)
         )
+
     else:
         # 非第一次直接回應
         line_bot_api.reply_message(
