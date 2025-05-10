@@ -19,14 +19,23 @@ handler = WebhookHandler('7ae43c5b1e96b1ab6746c02e73385e0b')
 translator = Translator()
 
 def extract_mentions(text):
-    mention_pattern = r"@[\S ]{1,15}(?=\s|$)"
-    mentions = re.findall(mention_pattern, text)
+    # 定義你希望過濾的提及名稱（可自行擴充）
+    mention_patterns = [
+        r"@張國華",
+        r"@suci슈지💜",
+        r"@瑋瑋Bella『筍友部落』🎍",
+        r"@Wei Ting"
+    ]
+    
+    mentions = []
     pure_text = text
-    for m in mentions:
-        pure_text = pure_text.replace(m, "")
+
+    for pattern in mention_patterns:
+        if pattern in text:
+            mentions.append(pattern)
+            pure_text = pure_text.replace(pattern, "")  # 移除提及人文字
+
     return mentions, pure_text.strip()
-
-
 
 
 # 修正 langdetect 的語言代碼，避免 googletrans 無法辨識
