@@ -65,8 +65,27 @@ def auto_translate(text):
         clean_text = re.sub(r"[\U00010000-\U0010ffff]", "", pure_text).strip()
 
         # 避免空字串送進 detect
-        if len(clean_text) < 2:
-            return "⚠️ 翻譯錯誤：內容太短，無法進行語言辨識"
+        # 特殊情境：文字太短但在已知詞彙中
+        short_fallback = {
+            "iya": "id",
+            "tidak": "id",
+            "makasih": "id",
+            "ok": "id",
+            "oke": "id",
+            "好": "zh",
+            "是": "zh",
+            "對": "zh",
+            "謝謝": "zh"
+        }
+        
+        if len(clean_text.strip()) < 2:
+            # 試著用 fallback 字詞對應語言
+            lowers = clean_text.lower()
+            if lowers in short_fallback:
+                lang = short_fallback[lowers]
+            else:
+                return "⚠️ 翻譯錯誤：內容太短，無法進行語言辨識"
+
 
         lang = detect(clean_text)
         print("語言偵測結果（純文字）:", lang)
