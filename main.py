@@ -19,12 +19,11 @@ handler = WebhookHandler('7ae43c5b1e96b1ab6746c02e73385e0b')
 translator = Translator()
 
 def extract_mentions(text):
-    # 抓出所有 @提及者，保留在 mentions 列表中
+    # 使用 regex 找出所有 @xxx（包括空白）
     mentions = re.findall(r"@[\w\W]{1,30}", text)
-    # 移除 mentions 後的純文字（留給翻譯用）
     pure_text = text
     for m in mentions:
-        pure_text = pure_text.replace(m, "")
+        pure_text = pure_text.replace(m, "")  # 不帶空白，保留原始句子結構
     return mentions, pure_text.strip()
 
 
