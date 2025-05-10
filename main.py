@@ -58,46 +58,48 @@ def auto_translate(text):
     try:
         mentions, pure_text = extract_mentions(text)
 
-        # 語言偵測用純文字
-        clean_text = re.sub(r"[，。！？、,.!?！：:]", "", pure_text)
-        # 先移除 mention 和 emoji 再做語言偵測
-        clean_text = re.sub(r"@[\w\W]{1,30}", "", text)  # 清掉 @用戶名稱
-        clean_text = re.sub(r"[^\w\s\u4e00-\u9fff]", "", clean_text)  # 清除 emoji 和特殊符號
+        # ✅ 建立乾淨的文字版本
+        clean_text = pure_text.strip()
+        clean_text = re.sub(r"@[\w\W]{1,30}", "", clean_text)  # 移除 @mention
+        clean_text = re.sub(r"[，。！？、,.!?！：:]", "", clean_text)  # 移除標點
+        clean_text = re.sub(r"[^\w\s\u4e00-\u9fff]", "", clean_text)  # 移除 emoji、特殊符號
+
+        # ✅ 避免語言偵測用的文字過短
+        if len(clean_text.strip()) < 2:
+            return "⚠️ 無法辨識語言：文字內容太少"
+
+        # ✅ 開始語言偵測
         lang = detect(clean_text)
         print("語言偵測結果（乾淨文本）：", lang)
-        
-        # 如果有超過 50% 中文 → 強制認為是 zh
+
+        # ✅ 中文比例偏高 → 視為中文
         if is_mostly_chinese(clean_text):
             lang = 'zh'
 
-        # 補丁 1：關鍵字補救
+        # ✅ 補丁：關鍵字強制判定
         if any(word in text for word in ["吃", "什麼", "今天", "你", "記得", "衣服", "收"]):
             lang = 'zh'
-        elif any(word in text.lower() for word in ["apa", "makan", "suci", "kamu", "mengerti"]):  # ⬅️ 加上 mengerti
+        elif any(word in text.lower() for word in ["apa", "makan", "suci", "kamu", "mengerti"]):
             lang = 'id'
 
-        # 補丁 2：中文字比例高 → 強制為中文
-        if is_mostly_chinese(text):
-            lang = 'zh'
-
-        # 補丁 3：時間格式 ex: 12點
+        # ✅ 補丁：時間格式
         if re.match(r"^\d{1,2}點$", text.strip()):
             lang = 'zh'
-            
-        # 補丁 4：針對常見短字自訂語言
+
+        # ✅ 補丁：特定短句明確指定語言
         lowers = text.strip().lower()
         if lowers in ["iya", "tidak", "mengerti", "terima kasih", "makasih", "oke", "nggak"]:
             lang = "id"
         elif lowers in ["好", "是", "對", "沒問題", "謝謝"]:
             lang = "zh"
-            
-        # 語言代碼標準化
+
+        # ✅ 語言代碼標準化
         if 'zh' in lang:
             lang = 'zh'
         elif lang == 'jw' or 'id' in lang:
             lang = 'id'
 
-        # 翻譯流程
+        # ✅ 開始翻譯流程
         if lang == 'zh':
             eng = translate(pure_text, 'en', 'zh')
             idn = translate(eng, 'id', 'en')
@@ -110,8 +112,10 @@ def auto_translate(text):
 
         else:
             return f"⚠️ 暫不支援此語言（偵測為：{lang}）"
+
     except Exception as e:
         return f"⚠️ 翻譯錯誤：{str(e)}"
+
 
 
 # LINE callback入口
