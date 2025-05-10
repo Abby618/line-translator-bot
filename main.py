@@ -59,12 +59,19 @@ def is_mostly_chinese(text):
 
 def auto_translate(text):
     try:
+        # 提取純文字（不含提及）
         mentions, pure_text = extract_mentions(text)
-
-        # 語言偵測用純文字
-        clean_text = re.sub(r"[，。！？、,.!?！：:]", "", pure_text)
-        clean_text = re.sub(r"[^\w\s\u4e00-\u9fff]", "", clean_text)  # 去掉 emoji 等符號
+        
+        # 前處理：過濾符號與 emoji
+        clean_text = re.sub(r"[^\w\s\u4e00-\u9fff]", "", pure_text)
+        clean_text = clean_text.strip()
+        
+        # 避免空字串送進 detect
+        if len(clean_text) < 2:
+            return "⚠️ 翻譯錯誤：內容太短，無法進行語言辨識"
+        
         lang = detect(clean_text)
+
         print("語言偵測結果（純文字）:", lang)
 
         if len(clean_text.strip()) < 2:
