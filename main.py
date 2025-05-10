@@ -66,7 +66,7 @@ def auto_translate(text):
         # 補丁 1：關鍵字補救
         if any(word in text for word in ["吃", "什麼", "今天", "你", "記得", "衣服", "收"]):
             lang = 'zh'
-        elif any(word in text.lower() for word in ["apa", "makan", "suci", "kamu"]):
+        elif any(word in text.lower() for word in ["apa", "makan", "suci", "kamu", "mengerti"]):  # ⬅️ 加上 mengerti
             lang = 'id'
 
         # 補丁 2：中文字比例高 → 強制為中文
@@ -76,6 +76,13 @@ def auto_translate(text):
         # 補丁 3：時間格式 ex: 12點
         if re.match(r"^\d{1,2}點$", text.strip()):
             lang = 'zh'
+            
+        # 補丁 4：針對常見短字自訂語言
+        lowers = text.strip().lower()
+        if lowers in ["iya", "tidak", "mengerti", "terima kasih", "makasih", "oke", "nggak"]:
+            lang = "id"
+        elif lowers in ["好", "是", "對", "沒問題", "謝謝"]:
+            lang = "zh"
 
         # 語言代碼標準化
         if 'zh' in lang:
