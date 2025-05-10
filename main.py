@@ -19,9 +19,13 @@ handler = WebhookHandler('7ae43c5b1e96b1ab6746c02e73385e0b')
 translator = Translator()
 
 def extract_mentions(text):
-    mentions = re.findall(r'@\S+', text)
-    content = re.sub(r'@\S+', '', text).strip()
-    return mentions, content
+    # 抓出所有 @提及者，保留在 mentions 列表中
+    mentions = re.findall(r"@[\w\W]{1,30}", text)
+    # 移除 mentions 後的純文字（留給翻譯用）
+    pure_text = text
+    for m in mentions:
+        pure_text = pure_text.replace(m, "")
+    return mentions, pure_text.strip()
 
 
 # 修正 langdetect 的語言代碼，避免 googletrans 無法辨識
@@ -53,63 +57,40 @@ def is_mostly_chinese(text):
     chinese_chars = re.findall(r'[\u4e00-\u9fff]', text)
     return len(chinese_chars) / max(len(text), 1) > 0.5
 
-# 自動翻譯邏輯
 def auto_translate(text):
     try:
         mentions, pure_text = extract_mentions(text)
 
-        # ✅ 建立乾淨的文字版本
-        clean_text = pure_text.strip()
-        clean_text = re.sub(r"@[\w\W]{1,30}", "", clean_text)  # 移除 @mention
-        clean_text = re.sub(r"[，。！？、,.!?！：:]", "", clean_text)  # 移除標點
-        clean_text = re.sub(r"[^\w\s\u4e00-\u9fff]", "", clean_text)  # 移除 emoji、特殊符號
+        # 語言偵測用純文字
+        clean_text = re.sub(r"[，。！？、,.!?！：:]", "", pure_text)
+        clean_text = re.sub(r"[^\w\s\u4e00-\u9fff]", "", clean_text)  # 去掉 emoji 等符號
+        lang = detect(clean_text)
+        print("語言偵測結果（純文字）:", lang)
 
-        # ✅ 避免語言偵測用的文字過短
         if len(clean_text.strip()) < 2:
             return "⚠️ 無法辨識語言：文字內容太少"
 
-        # ✅ 開始語言偵測
-        lang = detect(clean_text)
-        print("語言偵測結果（乾淨文本）：", lang)
-
-        # ✅ 中文比例偏高 → 視為中文
-        if is_mostly_chinese(clean_text):
-            lang = 'zh'
-
-        # ✅ 補丁：關鍵字強制判定
-        if any(word in text for word in ["吃", "什麼", "今天", "你", "記得", "衣服", "收"]):
-            lang = 'zh'
-        elif any(word in text.lower() for word in ["apa", "makan", "suci", "kamu", "mengerti"]):
-            lang = 'id'
-
-        # ✅ 補丁：時間格式
-        if re.match(r"^\d{1,2}點$", text.strip()):
-            lang = 'zh'
-
-        # ✅ 補丁：特定短句明確指定語言
-        lowers = text.strip().lower()
-        if lowers in ["iya", "tidak", "mengerti", "terima kasih", "makasih", "oke", "nggak"]:
-            lang = "id"
-        elif lowers in ["好", "是", "對", "沒問題", "謝謝"]:
+        # 補丁：強制中文詞補救
+        if is_mostly_chinese(clean_text) or any(word in clean_text for word in ["訊息", "你", "什麼", "吃"]):
             lang = "zh"
+        elif any(word in clean_text.lower() for word in ["makan", "apa", "anda", "mengerti"]):
+            lang = "id"
 
-        # ✅ 語言代碼標準化
-        if 'zh' in lang:
-            lang = 'zh'
-        elif lang == 'jw' or 'id' in lang:
-            lang = 'id'
+        # 語言標準化
+        if "zh" in lang:
+            lang = "zh"
+        elif lang == "jw" or "id" in lang:
+            lang = "id"
 
-        # ✅ 開始翻譯流程
-        if lang == 'zh':
-            eng = translate(pure_text, 'en', 'zh')
-            idn = translate(eng, 'id', 'en')
+        # 翻譯流程
+        if lang == "zh":
+            eng = translate(pure_text, "en", "zh")
+            idn = translate(eng, "id", "en")
             return f"🧑‍🏫 原文（中文）：\n{' '.join(mentions)} {pure_text}\n\n🌐 印尼語翻譯：\n{' '.join(mentions)} {idn}"
-
-        elif lang == 'id':
-            eng = translate(pure_text, 'en', 'id')
-            zh = translate(eng, 'zh', 'en')
+        elif lang == "id":
+            eng = translate(pure_text, "en", "id")
+            zh = translate(eng, "zh", "en")
             return f"🧑‍🏫 原文（印尼語）：\n{' '.join(mentions)} {pure_text}\n\n🌐 中文翻譯：\n{' '.join(mentions)} {zh}"
-
         else:
             return f"⚠️ 暫不支援此語言（偵測為：{lang}）"
 
