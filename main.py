@@ -19,12 +19,16 @@ handler = WebhookHandler('7ae43c5b1e96b1ab6746c02e73385e0b')
 translator = Translator()
 
 def extract_mentions(text):
-    # 使用 regex 找出所有 @xxx（包括空白）
     mentions = re.findall(r"@[\w\W]{1,30}", text)
+
+    # 若有提及者，只去除第一個 mention，視為「開頭提及」
     pure_text = text
-    for m in mentions:
-        pure_text = pure_text.replace(m, "")  # 不帶空白，保留原始句子結構
-    return mentions, pure_text.strip()
+    if mentions and text.startswith(mentions[0]):
+        pure_text = text[len(mentions[0]):].strip()
+    else:
+        pure_text = text
+
+    return mentions, pure_text
 
 
 # 修正 langdetect 的語言代碼，避免 googletrans 無法辨識
@@ -66,17 +70,38 @@ def auto_translate(text):
 
         # 避免空字串送進 detect
         # 特殊情境：文字太短但在已知詞彙中
+        # 特殊情境：文字太短但在已知詞彙中
         short_fallback = {
+            # 印尼語常見短語
             "iya": "id",
             "tidak": "id",
             "makasih": "id",
+            "terima kasih": "id",
             "ok": "id",
             "oke": "id",
+            "nggak": "id",
+            "enggak": "id",
+            "sip": "id",
+            "siap": "id",
+            "yoi": "id",
+            "yuk": "id",
+            "ayo": "id",
+            "mantap": "id",
+        
+            # 中文常見短語
             "好": "zh",
             "是": "zh",
             "對": "zh",
-            "謝謝": "zh"
+            "沒錯": "zh",
+            "沒問題": "zh",
+            "謝謝": "zh",
+            "感謝": "zh",
+            "了解": "zh",
+            "知道了": "zh",
+            "可以": "zh",
+            "行": "zh"
         }
+
         
         if len(clean_text.strip()) < 2:
             # 試著用 fallback 字詞對應語言
