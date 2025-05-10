@@ -19,7 +19,7 @@ handler = WebhookHandler('7ae43c5b1e96b1ab6746c02e73385e0b')
 translator = Translator()
 
 def extract_mentions(text):
-    mentions = re.findall(r"@[\w\W]{1,30}", text)
+    mentions = re.findall(r"@[\w\W]{1,8}", text)
 
     # 若有提及者，只去除第一個 mention，視為「開頭提及」
     pure_text = text
