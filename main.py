@@ -60,8 +60,15 @@ def auto_translate(text):
 
         # 語言偵測用純文字
         clean_text = re.sub(r"[，。！？、,.!?！：:]", "", pure_text)
+        # 先移除 mention 和 emoji 再做語言偵測
+        clean_text = re.sub(r"@[\w\W]{1,30}", "", text)  # 清掉 @用戶名稱
+        clean_text = re.sub(r"[^\w\s\u4e00-\u9fff]", "", clean_text)  # 清除 emoji 和特殊符號
         lang = detect(clean_text)
-        print("語言偵測結果（初步）：", lang)
+        print("語言偵測結果（乾淨文本）：", lang)
+        
+        # 如果有超過 50% 中文 → 強制認為是 zh
+        if is_mostly_chinese(clean_text):
+            lang = 'zh'
 
         # 補丁 1：關鍵字補救
         if any(word in text for word in ["吃", "什麼", "今天", "你", "記得", "衣服", "收"]):
@@ -83,7 +90,7 @@ def auto_translate(text):
             lang = "id"
         elif lowers in ["好", "是", "對", "沒問題", "謝謝"]:
             lang = "zh"
-
+            
         # 語言代碼標準化
         if 'zh' in lang:
             lang = 'zh'
