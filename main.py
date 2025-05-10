@@ -61,26 +61,21 @@ def auto_translate(text):
     try:
         # 提取純文字（不含提及）
         mentions, pure_text = extract_mentions(text)
-        
-        # 前處理：過濾符號與 emoji
-        clean_text = re.sub(r"[^\w\s\u4e00-\u9fff]", "", pure_text)
-        clean_text = clean_text.strip()
-        
+
+        # 改善語言偵測：保留標點與語意符號，只過濾 emoji（Unicode 大於 U+FFFF 的範圍）
+        clean_text = re.sub(r"[\U00010000-\U0010ffff]", "", pure_text).strip()
+
         # 避免空字串送進 detect
         if len(clean_text) < 2:
             return "⚠️ 翻譯錯誤：內容太短，無法進行語言辨識"
-        
-        lang = detect(clean_text)
 
+        lang = detect(clean_text)
         print("語言偵測結果（純文字）:", lang)
 
-        if len(clean_text.strip()) < 2:
-            return "⚠️ 無法辨識語言：文字內容太少"
-
-        # 補丁：強制中文詞補救
-        if is_mostly_chinese(clean_text) or any(word in clean_text for word in ["訊息", "你", "什麼", "吃"]):
+        # 中文比例高 → 強制 zh
+        if is_mostly_chinese(clean_text) or any(word in clean_text for word in ["訊息", "你", "什麼", "吃", "今天"]):
             lang = "zh"
-        elif any(word in clean_text.lower() for word in ["makan", "apa", "anda", "mengerti"]):
+        elif any(word in clean_text.lower() for word in ["makan", "apa", "anda", "mengerti", "iya", "tidak"]):
             lang = "id"
 
         # 語言標準化
@@ -103,7 +98,6 @@ def auto_translate(text):
 
     except Exception as e:
         return f"⚠️ 翻譯錯誤：{str(e)}"
-
 
 
 # LINE callback入口
@@ -140,7 +134,7 @@ def handle_message(event):
         )
         is_cold_start = False
         # 0.5秒後再送出真正翻譯訊息
-        time.sleep(0.5)
+        time.sleep(0.1)
         line_bot_api.push_message(
             event.source.user_id,
             TextSendMessage(text=reply_text)
