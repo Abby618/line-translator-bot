@@ -19,16 +19,14 @@ handler = WebhookHandler('7ae43c5b1e96b1ab6746c02e73385e0b')
 translator = Translator()
 
 def extract_mentions(text):
-    mentions = re.findall(r"@[\w\W]{1,8}", text)
-
-    # 若有提及者，只去除第一個 mention，視為「開頭提及」
+    mention_pattern = r"@[\S ]{1,15}(?=\s|$)"
+    mentions = re.findall(mention_pattern, text)
     pure_text = text
-    if mentions and text.startswith(mentions[0]):
-        pure_text = text[len(mentions[0]):].strip()
-    else:
-        pure_text = text
+    for m in mentions:
+        pure_text = pure_text.replace(m, "")
+    return mentions, pure_text.strip()
 
-    return mentions, pure_text
+
 
 
 # 修正 langdetect 的語言代碼，避免 googletrans 無法辨識
